@@ -1,7 +1,5 @@
 # Data
-data/raw/*
-data/processed/*
-data/samples/*
+data/
 
 # Models
 models/**/*
