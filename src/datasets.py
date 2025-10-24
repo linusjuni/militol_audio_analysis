@@ -15,7 +15,6 @@ class MADDataset(Dataset):
     Military Audio Dataset (MAD) for background sound classification.
 
     Loads all data, performs stratified split, returns raw audio waveforms.
-    Preprocessing (mel-spectrograms, augmentation) done separately.
 
     Classes: 6 total (labels 1-6). Label 0 (conversation) is excluded.
     """
