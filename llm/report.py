@@ -5,6 +5,9 @@ from dotenv import load_dotenv, find_dotenv
 from openai import OpenAI
 
 load_dotenv(find_dotenv(), override=False)
+ASR_JSON = Path("data/processed/asr/test_speech/asr_segments.json")
+BG_JSON  = Path("data/processed/bg/test_speech/events.json")  # or timeline.json
+REPORTS_DIR = Path("data/processed/reports")
 
 api_key = os.getenv("OPENAI_API_KEY")
 if not api_key:
@@ -13,13 +16,6 @@ if not api_key:
     )
 
 client = OpenAI(api_key=api_key)
-
-def project_root(start):
-    start = start.resolve()
-    for p in [start, *start.parents]:
-        if (p / "data").exists():
-            return p
-    return Path.cwd().resolve()
 
 def load_json(p):
     if not p.exists():
@@ -60,21 +56,38 @@ def normalize_bg_events(bg_sparse: dict) -> dict:
     norm.sort(key=lambda x: (x["start_s"], x["end_s"]))
     return {"events": norm, "meta": bg_sparse.get("meta", {})}
 
-def llm_report(intel, model = "gpt-4o-mini"):
+def build_intel_json(clip, asr, bg):
+    segs = asr.get("segments", [])
+    return {
+        "clip_id": clip,
+        "transcript_segments": segs,
+        "background": bg  
+    }
+
+def llm_report(intel, model="gpt-4o-mini"):
     system = (
-        "You are an intelligence analyst. ONLY use the JSON provided. "
-        "If something is missing, say so explicitly. Include uncertainties."
+        "You are an intelligence analyst. Use ONLY the JSON provided. "
+        "If something is missing, say so explicitly. Include uncertainties. "
+        "Ground each claim with specific timestamps from the evidence where possible."
     )
     user = (
-        "Write a concise report with these sections:\n"
-        "1) Executive Summary (3-6 bullets)\n"
-        "2) Background & Civilians (what was heard; confidence; timestamps)\n"
-        "3) Contradictions (claims vs audio cues; if none, say none)\n"
-        "4) Speaker Dynamics (talk-time shares; any leadership cues)\n"
-        "5) Evidence Timeline (key background events with times)\n\n"
+        "You receive:\n"
+        "- transcript_segments: list of {start_s, end_s, speaker, text}\n"
+        "- background.events: list of {label, start_s/end_s or t, probability}\n\n"
+        "Write a concise Markdown report with these sections and headings:\n\n"
+        "## Executive Summary\n"
+        "- 3-6 bullets with the most important findings.\n\n"
+        "## Scene Inference\n"
+        "- Infer likely environment(s) from background events; cite strongest evidence with timestamps and probabilities; state confidence.\n\n"
+        "## Civilians\n"
+        "- Assess likelihood of civilians/children being present using events (e.g., crowd/child-like sounds). Cite timestamps and probabilities; state confidence.\n\n"
+        "## Contradictions\n"
+        "- Compare any location/setting claims in the transcript (e.g., 'coast', 'city', 'transport') against background events. "
+        "Flag contradictions with evidence and timestamps. If none, say 'None observed'.\n\n"
+        "## Evidence Timeline\n"
+        "- Chronological list of the most relevant background events with time ranges and probabilities; include short notes if they relate to what’s being said.\n\n"
         "JSON:\n" + json.dumps(intel, ensure_ascii=False)
     )
-
     resp = client.chat.completions.create(
         model=model,
         temperature=0.1,
@@ -82,3 +95,22 @@ def llm_report(intel, model = "gpt-4o-mini"):
                   {"role":"user","content":user}],
     )
     return resp.choices[0].message.content or ""
+
+
+def main():
+    asr = load_json(ASR_JSON)
+    bg  = load_json(BG_JSON if BG_JSON.exists() else BG_JSON.with_name("timeline.json"))
+
+    clip_name = ASR_JSON.parent.name
+
+    intel = build_intel_json(asr, bg, clip_name)
+    report = llm_report(intel)
+
+    REPORTS_DIR.mkdir(parents=True, exist_ok=True)
+    out_path = REPORTS_DIR / f"{clip_name}.md"
+    out_path.write_text(report)
+    print(f"\nWrote report to {out_path}\n")
+    print(report)
+
+if __name__ == "__main__":
+    main()
