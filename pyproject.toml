@@ -11,7 +11,9 @@ dependencies = [
     "matplotlib>=3.10.7",
     "numpy>=2.3.4",
     "openai>=2.6.1",
+    "openai-whisper>=20250625",
     "pandas>=2.3.3",
+    "pyannote-audio>=4.0.1",
     "pydantic-settings>=2.11.0",
     "python-dotenv>=1.1.1",
     "pyyaml>=6.0.3",
@@ -21,6 +23,7 @@ dependencies = [
     "tensorboard>=2.20.0",
     "torch>=2.9.0",
     "torchaudio>=2.9.0",
+    "torchcodec>=0.8.0",
     "tqdm>=4.67.1",
     "transformers>=4.57.1",
 ]
