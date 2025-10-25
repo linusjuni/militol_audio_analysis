@@ -1,4 +1,4 @@
-from preprocessing.whisper_processor import WhisperXProcessor
+from preprocessing.whisper_processor import WhisperProcessor
 from utils.logger import get_logger
 
 logger = get_logger(__name__)
@@ -7,7 +7,7 @@ logger = get_logger(__name__)
 def main():
     # Initialize processor
     logger.info("Initializing WhisperX processor...")
-    processor = WhisperXProcessor(model_name="base")
+    processor = WhisperProcessor(model_name="base")
 
     # Process audio
     audio_path = "/Users/linusjuni/Downloads/linus_theo_talk.wav"

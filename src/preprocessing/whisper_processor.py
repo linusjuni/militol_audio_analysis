@@ -17,13 +17,13 @@ class SpeakerSegment:
 
 
 @dataclass
-class WhisperXOutput:
+class WhisperOutput:
     transcript: str
     speaker_segments: list[SpeakerSegment]
     word_timestamps: list[dict[str, any]]
 
 
-class WhisperXProcessor:
+class WhisperProcessor:
     """
     Speech-to-text with speaker diarization.
     
@@ -61,7 +61,7 @@ class WhisperXProcessor:
 
         logger.success("Models loaded successfully")
 
-    def process(self, audio_path: str) -> WhisperXOutput:
+    def process(self, audio_path: str) -> WhisperOutput:
         """
         Process audio file through Whisper + Diarization pipeline.
 
@@ -69,7 +69,7 @@ class WhisperXProcessor:
             audio_path: Path to audio file
 
         Returns:
-            WhisperXOutput with transcript, speaker segments, and word timestamps
+            WhisperOutput with transcript, speaker segments, and word timestamps
         """
         audio_path = Path(audio_path)
         if not audio_path.exists():
@@ -143,7 +143,7 @@ class WhisperXProcessor:
             f"{len(word_timestamps)} words"
         )
 
-        return WhisperXOutput(
+        return WhisperOutput(
             transcript=transcript,
             speaker_segments=speaker_segments,
             word_timestamps=word_timestamps,
