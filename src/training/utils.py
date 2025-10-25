@@ -12,7 +12,7 @@ from typing import List, Tuple
 
 def collate_fn_pad(
     batch: List[Tuple[torch.Tensor, int]],
-) -> Tuple[torch.Tensor, torch.Tensor]:
+) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
     """
     Collate function that pads audio waveforms to the same length.
 
@@ -23,14 +23,16 @@ def collate_fn_pad(
                waveform shape: (1, num_samples) or (num_samples,)
 
     Returns:
-        Tuple of (padded_waveforms, labels)
+        Tuple of (padded_waveforms, attention_mask, labels)
         padded_waveforms: (batch_size, max_length)
+        attention_mask: (batch_size, max_length) - 1 for real audio, 0 for padding
         labels: (batch_size,)
     """
     waveforms, labels = zip(*batch)
 
-    # Get max length in batch
+    # Get max length in batch and original lengths
     max_length = max(w.shape[-1] for w in waveforms)
+    original_lengths = []
 
     # Pad all waveforms to max_length
     padded_waveforms = []
@@ -38,6 +40,8 @@ def collate_fn_pad(
         # Remove channel dimension if present
         if w.dim() == 2:  # (1, samples)
             w = w.squeeze(0)  # -> (samples,)
+
+        original_lengths.append(w.shape[0])
 
         # Pad to max_length
         if w.shape[0] < max_length:
@@ -50,7 +54,12 @@ def collate_fn_pad(
     waveforms_batch = torch.stack(padded_waveforms, dim=0)  # (batch, max_length)
     labels_batch = torch.tensor(labels, dtype=torch.long)
 
-    return waveforms_batch, labels_batch
+    # Create attention mask: 1 for real audio, 0 for padding
+    attention_mask = torch.zeros_like(waveforms_batch)
+    for i, length in enumerate(original_lengths):
+        attention_mask[i, :length] = 1.0
+
+    return waveforms_batch, attention_mask, labels_batch
 
 
 def train_epoch(
@@ -77,13 +86,14 @@ def train_epoch(
     total_loss = 0.0
     num_batches = 0
 
-    for waveforms, labels in dataloader:
+    for waveforms, attention_mask, labels in dataloader:
         waveforms = waveforms.to(device)
+        attention_mask = attention_mask.to(device)
         labels = labels.to(device)
 
         # Forward pass
         optimizer.zero_grad()
-        logits = model(waveforms)
+        logits = model(waveforms, attention_mask=attention_mask)
         loss = criterion(logits, labels)
 
         # Backward pass
@@ -117,11 +127,12 @@ def compute_accuracy(
     total = 0
 
     with torch.no_grad():
-        for waveforms, labels in dataloader:
+        for waveforms, attention_mask, labels in dataloader:
             waveforms = waveforms.to(device)
+            attention_mask = attention_mask.to(device)
             labels = labels.to(device)
 
-            logits = model(waveforms)
+            logits = model(waveforms, attention_mask=attention_mask)
             predictions = torch.argmax(logits, dim=1)
 
             correct += (predictions == labels).sum().item()

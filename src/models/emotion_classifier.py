@@ -42,20 +42,59 @@ class EmotionClassifier(nn.Module):
             nn.Linear(256, num_emotions),
         )
 
-    def forward(self, waveforms: torch.Tensor) -> torch.Tensor:
+    def forward(
+        self, waveforms: torch.Tensor, attention_mask: torch.Tensor = None
+    ) -> torch.Tensor:
         """
-        Forward pass.
+        Forward pass with optional attention masking.
+
+        Args:
+            waveforms: Audio waveforms (batch, samples)
+            attention_mask: Mask for padding (batch, samples), 1=real, 0=padding
+
+        Returns:
+            logits: (batch, num_emotions)
         """
         # Handle different input shapes
         if waveforms.dim() == 3:  # (batch, 1, samples)
             waveforms = waveforms.squeeze(1)  # -> (batch, samples)
 
         # Get Wav2Vec2 features
-        outputs = self.wav2vec2(waveforms)
+        outputs = self.wav2vec2(waveforms, attention_mask=attention_mask)
         hidden_states = outputs.last_hidden_state  # (batch, seq_len, hidden_size)
 
-        # Average pool over time dimension
-        pooled = hidden_states.mean(dim=1)  # (batch, hidden_size)
+        # Masked mean pooling over time dimension
+        if attention_mask is not None:
+            # Wav2Vec2 downsamples audio, so we need to downsample the attention mask too
+            # Wav2Vec2 has a stride of 320 (for 16kHz audio, each frame = 20ms)
+            # Calculate expected sequence length
+            seq_len = hidden_states.shape[1]
+
+            # Downsample attention mask to match hidden_states sequence length
+            # Use adaptive pooling to match dimensions
+            attention_mask_downsampled = torch.nn.functional.adaptive_avg_pool1d(
+                attention_mask.unsqueeze(1),  # (batch, 1, samples)
+                seq_len,  # Target length
+            ).squeeze(
+                1
+            )  # (batch, seq_len)
+
+            # Binarize (values > 0.5 are considered valid)
+            attention_mask_downsampled = (attention_mask_downsampled > 0.5).float()
+
+            # Expand mask to hidden dimension
+            mask_expanded = attention_mask_downsampled.unsqueeze(
+                -1
+            )  # (batch, seq_len, 1)
+
+            # Apply mask and compute mean
+            masked_hidden = hidden_states * mask_expanded
+            sum_hidden = masked_hidden.sum(dim=1)  # (batch, hidden_size)
+            count = mask_expanded.sum(dim=1).clamp(min=1e-9)  # (batch, 1)
+            pooled = sum_hidden / count  # (batch, hidden_size)
+        else:
+            # Fall back to simple mean pooling if no mask provided
+            pooled = hidden_states.mean(dim=1)  # (batch, hidden_size)
 
         # Classification
         logits = self.classifier(pooled)  # (batch, num_emotions)
