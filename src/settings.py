@@ -12,6 +12,10 @@ class Settings(BaseSettings):
     OPENAI_API_KEY: str = Field(
         ..., description="OpenAI API key for intelligence generation"
     )
+    
+    HF_TOKEN: str = Field(
+        ..., description="Hugging Face token"
+    )
 
     # LLM Configuration
     LLM_MODEL: str = Field(
