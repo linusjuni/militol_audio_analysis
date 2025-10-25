@@ -36,7 +36,7 @@ def ensure_bg_events(audio_path: Path, clip: str, ckpt_path: Path) -> Path:
         raise RuntimeError(f"AST expects WAV. Got {audio_path}. Convert upstream or enable the conversion here.")
 
     from sed.infer import infer_ast  # your script with the importable function
-    log.info(f"🎯 Running AST on {wav_in} → {out_json}")
+    log.info(f"Running AST on {wav_in} → {out_json}")
     infer_ast(
         wav=wav_in,
         ckpt=ckpt_path,
