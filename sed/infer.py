@@ -139,14 +139,39 @@ def run(args: argparse.Namespace) -> None:
             window_times.append((start_time, end_time))
 
     events = decode_events(probabilities, window_times, class_names, threshold)
-    save_json(args.out_json, events)
+
+    
+
+    mapped = [
+        {
+            "label":      str(ev["class"]).lower(),
+            "start_s":    float(ev["onset"]),
+            "end_s":      float(ev["offset"]),
+            "p":          float(ev["confidence"]),
+        }
+        for ev in events
+    ]
+
+    payload = {
+        "events": mapped,
+        "meta": {
+            "ckpt": str(args.ckpt),
+            "window_sec": args.window_sec,
+            "overlap": args.overlap,
+            "threshold": threshold,
+            "sample_rate": sample_rate,
+            "device": args.device,
+        }
+    }
+
+    save_json(args.out_json, payload)
 
     if args.print_summary:
         if events:
             summary = ", ".join(f"{ev['class']}@{ev['onset']:.2f}-{ev['offset']:.2f}" for ev in events)
             print(summary)
         else:
-            print("No events detected.")
+            print("No events detected.")9
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -161,6 +186,28 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--print_summary", action="store_true")
     return parser
 
+def infer_ast(
+    wav: Path,
+    ckpt: Path,
+    out_json: Path,
+    window_sec: float = 5.0,
+    overlap: float = 0.5,
+    threshold: float | None = None,
+    device: str | None = None,
+    print_summary: bool = False,
+) -> None:
+    """Importable entrypoint so the pipeline can call AST directly (no subprocess)."""
+    args = argparse.Namespace(
+        wav=wav,
+        ckpt=ckpt,
+        out_json=out_json,
+        window_sec=window_sec,
+        overlap=overlap,
+        threshold=threshold,
+        device=device or ("cuda" if torch.cuda.is_available() else "cpu"),
+        print_summary=print_summary,
+    )
+    run(args)
 
 def main() -> None:
     run(build_parser().parse_args())
