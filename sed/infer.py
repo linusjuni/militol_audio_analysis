@@ -21,7 +21,7 @@ def load_model(ckpt_path: Path, device: torch.device) -> Dict[str, object]:
     pretrained = extra["pretrained"]
     class_names = extra["class_names"]
     config_dict = extra["config"]
-    threshold = extra.get("threshold", 0.6)
+    threshold = extra.get("threshold", 0.1)
     sample_rate = extra.get("sample_rate", 16000)
 
     config = AutoConfig.from_pretrained(pretrained)
