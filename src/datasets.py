@@ -5,6 +5,8 @@ from torch.utils.data import Dataset
 from sklearn.model_selection import train_test_split
 import kagglehub
 import soundfile as sf
+
+from src.audio_utils import ensure_sample_rate
 from src.utils.logger import get_logger
 
 logger = get_logger(__name__)
@@ -115,12 +117,7 @@ class MADDataset(Dataset):
                 torch.FloatTensor(data).mean(dim=1, keepdim=True).t()
             )  # Average channels
 
-        # Resample if needed
-        if sr != self.sample_rate:
-            import torchaudio
-
-            resampler = torchaudio.transforms.Resample(sr, self.sample_rate)
-            waveform = resampler(waveform)
+        waveform = ensure_sample_rate(waveform, sr, self.sample_rate)
 
         # Get label
         label = int(row["label"])

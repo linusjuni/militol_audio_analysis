@@ -11,6 +11,7 @@ import soundfile as sf
 import torch
 from transformers import AutoConfig, AutoFeatureExtractor, AutoModelForAudioClassification
 
+from src.audio_utils import ensure_sample_rate
 from sed.utils import load_checkpoint, save_json
 
 
@@ -30,6 +31,7 @@ def load_model(ckpt_path: Path, device: torch.device) -> Dict[str, object]:
     model = AutoModelForAudioClassification.from_pretrained(
         pretrained,
         config=config,
+        ignore_mismatched_sizes=True,
     )
     model.load_state_dict(checkpoint.model)
     model.to(device)
@@ -104,11 +106,13 @@ def run(args: argparse.Namespace) -> None:
     threshold: float = args.threshold if args.threshold is not None else bundle["threshold"]  # type: ignore
     sample_rate: int = bundle["sample_rate"]  # type: ignore
 
-    waveform, sr = sf.read(args.wav)
-    if sr != sample_rate:
-        raise ValueError(f"Expected sample rate {sample_rate}, got {sr}. Please resample the audio file.")
-    if waveform.ndim > 1:
-        waveform = waveform.mean(axis=1)
+    waveform_np, sr = sf.read(args.wav)
+    if waveform_np.ndim > 1:
+        waveform_np = waveform_np.mean(axis=1)
+
+    waveform_tensor = torch.from_numpy(np.asarray(waveform_np, dtype=np.float32)).unsqueeze(0)
+    waveform_tensor = ensure_sample_rate(waveform_tensor, sr, sample_rate)
+    waveform = waveform_tensor.squeeze(0).cpu().numpy()
 
     samples = waveform.shape[0]
     hop_sec = args.window_sec * (1.0 - args.overlap)

@@ -1,0 +1,74 @@
+[
+  {
+    "class": "Shelling",
+    "onset": 0.0,
+    "offset": 20.0,
+    "confidence": 0.669
+  },
+  {
+    "class": "Fighter",
+    "onset": 0.0,
+    "offset": 7.5,
+    "confidence": 0.16
+  },
+  {
+    "class": "Gunshot",
+    "onset": 2.5,
+    "offset": 12.5,
+    "confidence": 0.257
+  },
+  {
+    "class": "Footsteps",
+    "onset": 10.0,
+    "offset": 32.5,
+    "confidence": 0.414
+  },
+  {
+    "class": "Vehicle",
+    "onset": 10.0,
+    "offset": 36.864,
+    "confidence": 0.423
+  },
+  {
+    "class": "Helicopter",
+    "onset": 10.0,
+    "offset": 35.0,
+    "confidence": 0.238
+  },
+  {
+    "class": "Fighter",
+    "onset": 10.0,
+    "offset": 17.5,
+    "confidence": 0.23
+  },
+  {
+    "class": "Gunshot",
+    "onset": 12.5,
+    "offset": 27.5,
+    "confidence": 0.184
+  },
+  {
+    "class": "Shelling",
+    "onset": 20.0,
+    "offset": 30.0,
+    "confidence": 0.264
+  },
+  {
+    "class": "Fighter",
+    "onset": 22.5,
+    "offset": 27.5,
+    "confidence": 0.103
+  },
+  {
+    "class": "Gunshot",
+    "onset": 27.5,
+    "offset": 36.864,
+    "confidence": 0.497
+  },
+  {
+    "class": "Shelling",
+    "onset": 30.0,
+    "offset": 36.864,
+    "confidence": 0.147
+  }
+]

@@ -104,6 +104,11 @@ def train(args: argparse.Namespace) -> None:
         data_root=args.data_root,
     )
 
+    if args.train_head_only:
+        for name, param in model.named_parameters():
+            param.requires_grad = name.startswith("classifier")
+
+
     optimizer = torch.optim.AdamW(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
     total_steps = args.epochs * len(train_loader)
     warmup_steps = int(total_steps * args.warmup_ratio)
@@ -205,6 +210,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--device", type=str, default="cuda" if torch.cuda.is_available() else "cpu")
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--log_every", type=int, default=25, help="Interval (in steps) for intermediate training logs.")
+    parser.add_argument("--train_head_only", action="store_true")
     return parser
 
 
