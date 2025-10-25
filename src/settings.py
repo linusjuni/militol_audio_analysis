@@ -19,7 +19,7 @@ class Settings(BaseSettings):
     )
     
     LLM_MAX_TOKENS: int = Field(default=1000, description="Max tokens for LLM response")
-
+    
     class Config:
         env_file = ".env"
         env_file_encoding = "utf-8"
