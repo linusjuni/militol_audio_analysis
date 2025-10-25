@@ -1363,7 +1363,6 @@ dependencies = [
     { name = "torch" },
     { name = "torchaudio" },
     { name = "torchcodec" },
-    { name = "torchcodec" },
     { name = "tqdm" },
     { name = "transformers" },
 ]
