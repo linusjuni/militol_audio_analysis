@@ -97,20 +97,13 @@ def llm_report(intel, model="gpt-4o-mini"):
     return resp.choices[0].message.content or ""
 
 
-def main():
-    asr = load_json(ASR_JSON)
-    bg  = load_json(BG_JSON if BG_JSON.exists() else BG_JSON.with_name("timeline.json"))
-
-    clip_name = ASR_JSON.parent.name
-
-    intel = build_intel_json(asr, bg, clip_name)
-    report = llm_report(intel)
-
-    REPORTS_DIR.mkdir(parents=True, exist_ok=True)
-    out_path = REPORTS_DIR / f"{clip_name}.md"
+def generate_report(asr_json_path, bg_json_path, out_dir, model = "gpt-4o-mini"):
+    asr = load_json(asr_json_path)
+    bg  = load_json(bg_json_path if bg_json_path.exists() else bg_json_path.with_name("timeline.json"))
+    clip_name = asr_json_path.parent.name
+    intel = build_intel_json(clip_name, asr, bg)
+    report = llm_report(intel, model=model)
+    out_dir.mkdir(parents=True, exist_ok=True)
+    out_path = out_dir / f"{clip_name}.md"
     out_path.write_text(report)
-    print(f"\nWrote report to {out_path}\n")
-    print(report)
-
-if __name__ == "__main__":
-    main()
+    return out_path, report
