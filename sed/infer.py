@@ -152,11 +152,11 @@ def run(args: argparse.Namespace) -> None:
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Run AST-based SED inference and emit JSON events.")
     parser.add_argument("--wav", type=Path, required=True, help="Path to WAV file.")
-    parser.add_argument("--ckpt", type=Path, required=True, help="Checkpoint produced by sed.train.")
+    parser.add_argument("--ckpt", type=Path, default='runs/ast_mad/best.pt', help="Checkpoint produced by sed.train.")
     parser.add_argument("--out_json", type=Path, required=True, help="Destination for event JSON list.")
     parser.add_argument("--window_sec", type=float, default=5.0, help="Sliding window size in seconds.")
     parser.add_argument("--overlap", type=float, default=0.5, help="Window overlap ratio (0–1).")
-    parser.add_argument("--threshold", type=float, default=None, help="Optional probability threshold override.")
+    parser.add_argument("--threshold", type=float, default=0.1, help="Optional probability threshold override.")
     parser.add_argument("--device", type=str, default="cuda" if torch.cuda.is_available() else "cpu")
     parser.add_argument("--print_summary", action="store_true")
     return parser
