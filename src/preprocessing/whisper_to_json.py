@@ -65,30 +65,24 @@ def words_to_segments(words: list[dict], max_gap_s: float = MAX_GAP_S) -> list[d
     segs.append(cur)
     return segs
 
-def main():
-    print("Test")
-    audio = AUDIO_PATH if AUDIO_PATH.is_absolute() else Path.cwd() / AUDIO_PATH
+def export_asr_json(audio_path: Path, model_name: str = "base",
+                    max_gap_s: float = 0.75,
+                    out_root: Path = PROJECT_ROOT / "data" / "processed" / "asr") -> Path:
+    audio = audio_path if audio_path.is_absolute() else PROJECT_ROOT / audio_path
     if not audio.exists():
         raise FileNotFoundError(f"Audio not found: {audio}")
-
     clip = audio.stem
-    out_dir = Path("data/processed/asr") / clip
+    out_dir = out_root / clip
     out_dir.mkdir(parents=True, exist_ok=True)
 
     logger.info(f"Transcribing + diarizing: {audio}")
-    proc = WhisperProcessor(model_name=MODEL_NAME)
+    proc = WhisperProcessor(model_name=model_name)
     out = proc.process(str(audio))
 
-    segments = words_to_segments(out.word_timestamps, max_gap_s=MAX_GAP_S)
-
-    asr_json = {
-        "transcript": (out.transcript or "").strip(),
-        "segments": segments,
-    }
+    segments = words_to_segments(out.word_timestamps, max_gap_s=max_gap_s)
+    asr_json = {"transcript": (out.transcript or "").strip(), "segments": segments}
 
     json_path = out_dir / "asr_segments.json"
     json_path.write_text(json.dumps(asr_json, ensure_ascii=False, indent=2))
     logger.success(f"Wrote ASR JSON → {json_path}")
-
-if __name__ == "__main__":
-    main()
+    return json_path
