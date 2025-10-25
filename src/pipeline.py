@@ -49,7 +49,7 @@ def ensure_bg_events(audio_path: Path, clip: str, ckpt_path: Path) -> Path:
     )
     return out_json
 
-def main():
+def make_report():
     clip = "military_test"
     ckpt = ROOT_DIR / "runs" / "ast_mad" / "best.pt"
     asr_path = export_asr_json(ROOT_DIR / f"data/raw/{clip}.wav",
@@ -58,6 +58,7 @@ def main():
     path, report   = generate_report(asr_path, bg_path, ROOT_DIR / "data/processed/reports")
     print(report)
     print("Report ->", path)
+    return report    
 
 if __name__ == "__main__":
-    main()
+    make_report()
