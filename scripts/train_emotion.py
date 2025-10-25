@@ -1,3 +1,9 @@
+"""
+Training script for emotion classifier on RAVDESS dataset.
+
+Train Wav2Vec2-based emotion classifier with 8 emotion classes.
+"""
+
 import sys
 from pathlib import Path
 
@@ -7,9 +13,15 @@ sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 import torch
 import torch.nn as nn
 import torch.optim as optim
-from datasets import get_ravdess_dataloaders
+from torch.utils.data import DataLoader
+from datasets import RAVDESSDataset
 from models.emotion_classifier import EmotionClassifier
-from training.utils import train_epoch, compute_accuracy, save_checkpoint
+from training.utils import (
+    train_epoch,
+    compute_accuracy,
+    save_checkpoint,
+    collate_fn_pad,
+)
 from utils.logger import get_logger
 
 logger = get_logger(__name__)
@@ -32,14 +44,36 @@ def main():
 
     # Load datasets
     logger.info("Loading RAVDESS dataset...")
-    train_loader, val_loader, test_loader = get_ravdess_dataloaders(
+
+    train_dataset = RAVDESSDataset(split="train")
+    val_dataset = RAVDESSDataset(split="val")
+    test_dataset = RAVDESSDataset(split="test")
+
+    train_loader = DataLoader(
+        train_dataset,
         batch_size=BATCH_SIZE,
+        shuffle=True,
         num_workers=NUM_WORKERS,
+        collate_fn=collate_fn_pad,
+    )
+    val_loader = DataLoader(
+        val_dataset,
+        batch_size=BATCH_SIZE,
+        shuffle=False,
+        num_workers=NUM_WORKERS,
+        collate_fn=collate_fn_pad,
+    )
+    test_loader = DataLoader(
+        test_dataset,
+        batch_size=BATCH_SIZE,
+        shuffle=False,
+        num_workers=NUM_WORKERS,
+        collate_fn=collate_fn_pad,
     )
 
-    logger.info(f"Train samples: {len(train_loader.dataset)}")
-    logger.info(f"Val samples: {len(val_loader.dataset)}")
-    logger.info(f"Test samples: {len(test_loader.dataset)}")
+    logger.info(f"Train samples: {len(train_dataset)}")
+    logger.info(f"Val samples: {len(val_dataset)}")
+    logger.info(f"Test samples: {len(test_dataset)}")
 
     # Initialize model
     logger.info("Initializing Wav2Vec2 emotion classifier...")
