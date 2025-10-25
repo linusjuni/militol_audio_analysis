@@ -52,7 +52,7 @@ def ensure_bg_events(audio_path: Path, clip: str, ckpt_path: Path) -> Path:
 def main():
     clip = "military_test"
     ckpt = ROOT_DIR / "runs" / "ast_mad" / "best.pt"
-    asr_path = export_asr_json(ROOT_DIR / f"data/raw/{clip}.mp3",
+    asr_path = export_asr_json(ROOT_DIR / f"data/raw/{clip}.wav",
                                model_name="base", max_gap_s=0.75)
     bg_path = ensure_bg_events(ROOT_DIR / f"data/raw/{clip}.wav", clip, ckpt)
     path, report   = generate_report(asr_path, bg_path, ROOT_DIR / "data/processed/reports")
