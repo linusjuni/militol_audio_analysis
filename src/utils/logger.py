@@ -67,24 +67,44 @@ class AppLogger:
         parts = [f"{Colors.GRAY}{k}={v}{Colors.RESET}" for k, v in kwargs.items()]
         return " " + " ".join(parts)
 
-    def info(self, message: str, **kwargs):
+    def info(self, message: str, *args, **kwargs):
         """Log info message with optional context"""
         extras = self._format_extras(**kwargs)
+        if args:
+            try:
+                message = message % args
+            except TypeError:
+                message = message.format(*args)
         self.logger.info(f"{message}{extras}")
 
-    def warning(self, message: str, **kwargs):
+    def warning(self, message: str, *args, **kwargs):
         """Log warning message with optional context"""
         extras = self._format_extras(**kwargs)
+        if args:
+            try:
+                message = message % args
+            except TypeError:
+                message = message.format(*args)
         self.logger.warning(f"{message}{extras}")
 
-    def error(self, message: str, **kwargs):
+    def error(self, message: str, *args, **kwargs):
         """Log error message with optional context"""
         extras = self._format_extras(**kwargs)
+        if args:
+            try:
+                message = message % args
+            except TypeError:
+                message = message.format(*args)
         self.logger.error(f"{message}{extras}")
 
-    def success(self, message: str, **kwargs):
+    def success(self, message: str, *args, **kwargs):
         """Log success message with optional context"""
         extras = self._format_extras(**kwargs)
+        if args:
+            try:
+                message = message % args
+            except TypeError:
+                message = message.format(*args)
         self.logger.log(SUCCESS_LEVEL, f"{message}{extras}")
 
 

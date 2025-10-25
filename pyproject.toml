@@ -6,6 +6,7 @@ readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
     "certifi>=2025.10.5",
+    "fastapi>=0.115.0",
     "demucs>=4.0.1",
     "kagglehub>=0.3.13",
     "librosa>=0.11.0",
@@ -16,6 +17,7 @@ dependencies = [
     "pandas>=2.3.3",
     "pyannote-audio>=4.0.1",
     "pydantic-settings>=2.11.0",
+    "python-multipart>=0.0.9",
     "python-dotenv>=1.1.1",
     "pyyaml>=6.0.3",
     "scikit-learn>=1.7.2",
@@ -27,4 +29,5 @@ dependencies = [
     "torchcodec>=0.8.0",
     "tqdm>=4.67.1",
     "transformers>=4.57.1",
+    "uvicorn>=0.32.0",
 ]

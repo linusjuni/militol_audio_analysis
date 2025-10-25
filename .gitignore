@@ -226,3 +226,4 @@ marimo/_lsp/
 __marimo__/
 /runs
 /outputs
+/frontend/node_modules
