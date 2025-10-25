@@ -171,7 +171,7 @@ def run(args: argparse.Namespace) -> None:
             summary = ", ".join(f"{ev['class']}@{ev['onset']:.2f}-{ev['offset']:.2f}" for ev in events)
             print(summary)
         else:
-            print("No events detected.")9
+            print("No events detected.")
 
 
 def build_parser() -> argparse.ArgumentParser:
