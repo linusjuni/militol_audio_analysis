@@ -12,6 +12,27 @@ from app.schemas import InterceptSummary
 
 ROOT_DIR = Path(__file__).resolve().parents[1]
 REGISTRY_PATH = ROOT_DIR / "data" / "processed" / "intercepts" / "index.json"
+_EXTENSIONS_TO_STRIP = {".wav", ".m4a", ".mp3", ".flac", ".ogg"}
+
+
+def _display_title(raw_title: Optional[str], fallback: str) -> str:
+    """
+    Normalise titles for UI display:
+    - Drop known audio file extensions.
+    - Preserve original casing and spacing.
+    - Fall back to the intercept id when empty.
+    """
+    candidate = (raw_title or "").strip()
+    if not candidate:
+        return fallback
+
+    name_only = Path(candidate).name
+    suffix = Path(name_only).suffix.lower()
+    if suffix in _EXTENSIONS_TO_STRIP:
+        stem = Path(name_only).stem
+        if stem:
+            return stem
+    return name_only
 
 
 @dataclass
@@ -32,9 +53,10 @@ class InterceptMeta:
         audio_url = None
         if base_url and self.audio_rel_path:
             audio_url = f"{base_url.rstrip('/')}/{self.audio_rel_path}"
+        display_title = _display_title(self.title, self.intercept_id)
         return InterceptSummary(
             intercept_id=self.intercept_id,
-            title=self.title,
+            title=display_title,
             status=self.status,
             created_at=self.created_at,
             updated_at=self.updated_at,
