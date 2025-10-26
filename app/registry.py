@@ -270,3 +270,10 @@ def list_summaries(base_url: Optional[str] = None) -> List[InterceptSummary]:
 def get_meta(intercept_id: str) -> Optional[InterceptMeta]:
     registry = load_registry()
     return registry.get(intercept_id)
+
+
+def delete_meta(intercept_id: str) -> Optional[InterceptMeta]:
+    registry = load_registry()
+    meta = registry.pop(intercept_id, None)
+    save_registry(registry)
+    return meta

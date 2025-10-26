@@ -1,18 +1,25 @@
 .ops-shell {
   display: grid;
-  grid-template-columns: 260px minmax(440px, 1.1fr) minmax(560px, 0.95fr);
+  grid-template-rows: auto minmax(0, 1fr);
   min-height: 100vh;
   backdrop-filter: blur(18px);
   background-color: rgba(5, 8, 9, 0.65);
 }
 
+.ops-shell__top {
+  display: grid;
+  grid-template-columns: 240px minmax(360px, 1.1fr) minmax(520px, 0.95fr);
+  min-height: 300px;
+  border-bottom: 1px solid var(--color-border);
+}
+
 .ops-shell__left {
-  padding: 24px 20px;
+  padding: 20px 18px;
   border-right: 1px solid var(--color-border);
   background: linear-gradient(180deg, rgba(11, 16, 19, 0.85) 0%, rgba(6, 9, 11, 0.9) 100%);
   display: flex;
   flex-direction: column;
-  gap: 28px;
+  gap: 22px;
 }
 
 .ops-shell__brand {
@@ -47,50 +54,38 @@
   font-size: 11px;
 }
 
-.ops-shell__stat-grid {
+.ops-shell__pulse {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 12px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: rgba(14, 22, 27, 0.85);
+  border: 1px solid rgba(47, 67, 80, 0.4);
 }
 
-.stat-chip {
-  border-radius: 12px;
-  padding: 12px 14px;
-  background: var(--color-surface);
-  border: 1px solid rgba(255, 255, 255, 0.04);
+.ops-shell__pulse-item {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 2px;
 }
 
-.stat-chip__value {
-  font-size: 20px;
-  font-weight: 600;
-}
-
-.stat-chip__label {
-  font-size: 11px;
-  color: var(--color-text-muted);
+.ops-shell__pulse-label {
+  font-size: 10px;
   text-transform: uppercase;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.16em;
+  color: var(--color-text-muted);
 }
 
-.stat-chip--positive {
-  border-color: rgba(92, 201, 92, 0.35);
-}
-
-.stat-chip--warning {
-  border-color: rgba(245, 185, 66, 0.35);
-}
-
-.stat-chip--danger {
-  border-color: rgba(240, 106, 106, 0.35);
+.ops-shell__pulse-value {
+  font-size: 18px;
+  font-weight: 600;
 }
 
 .ops-shell__actions {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 8px;
 }
 
 .ops-shell__action-button {
@@ -117,6 +112,40 @@
   gap: 4px;
 }
 
+.ops-shell__status-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.ops-shell__status-refresh {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}
+
+.ops-shell__status-spinner {
+  width: 12px;
+  height: 12px;
+  border-radius: 999px;
+  border: 2px solid rgba(92, 201, 92, 0.25);
+  border-top-color: var(--color-accent);
+  animation: ops-shell-status-spin 0.8s linear infinite;
+  flex-shrink: 0;
+}
+
+@keyframes ops-shell-status-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 .ops-shell__status-loading {
   color: var(--color-accent);
 }
@@ -139,45 +168,57 @@
 
 .ops-shell__filters h4 {
   margin: 0;
-  font-size: 13px;
+  font-size: 12px;
   text-transform: uppercase;
   letter-spacing: 0.12em;
   color: var(--color-text-muted);
+}
+
+.ops-shell__filter-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 
 .ops-shell__filter-button {
   border: 1px solid rgba(31, 46, 56, 0.9);
   background: rgba(16, 24, 29, 0.9);
   color: var(--color-text);
-  border-radius: 8px;
-  padding: 8px 10px;
-  font-size: 12px;
-  text-align: left;
+  border-radius: 999px;
+  padding: 6px 12px;
+  font-size: 11px;
+  text-align: center;
   cursor: pointer;
-  transition: border-color 0.2s ease, transform 0.2s ease;
+  transition: border-color 0.2s ease, background 0.2s ease;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
 .ops-shell__filter-button:hover {
   border-color: var(--color-accent);
-  transform: translateX(2px);
 }
 
 .ops-shell__filter-button--active {
   border-color: var(--color-accent-strong);
-  background: rgba(39, 232, 155, 0.18);
+  background: rgba(39, 232, 155, 0.2);
   color: var(--color-accent-strong);
-  transform: translateX(2px);
 }
 
 .ops-shell__log-area {
   border-right: 1px solid var(--color-border);
-  padding: 24px 28px;
+  padding: 20px 24px;
   overflow-y: auto;
   background: rgba(16, 24, 29, 0.55);
 }
 
-.ops-shell__detail-area {
-  padding: 30px;
+.ops-shell__overview-area {
+  padding: 24px 26px;
   overflow-y: auto;
   background: rgba(12, 18, 22, 0.86);
+}
+
+.ops-shell__detail-area {
+  padding: 22px 34px 32px;
+  overflow-y: auto;
+  background: rgba(8, 12, 15, 0.92);
 }

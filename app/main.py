@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
+import shutil
 from pathlib import Path
 from typing import Optional
 
@@ -8,8 +9,14 @@ from fastapi import BackgroundTasks, FastAPI, File, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 
-from app import registry
-from app.registry import InterceptMeta, derive_tags, list_summaries, upsert_meta
+from app.registry import (
+    InterceptMeta,
+    derive_tags,
+    delete_meta,
+    get_meta,
+    list_summaries,
+    upsert_meta,
+)
 from app.schemas import InterceptDetail, InterceptSummary
 
 app = FastAPI(title="Militol Audio Analysis API", version="0.1.0")
@@ -52,7 +59,7 @@ def _build_audio_response(path: Path) -> FileResponse:
 
 @app.get("/intercepts/{intercept_id}/audio")
 async def download_audio(intercept_id: str):
-    meta = registry.get_meta(intercept_id)
+    meta = get_meta(intercept_id)
     if not meta or not meta.audio_rel_path:
         raise HTTPException(status_code=404, detail="Audio not available for intercept")
     audio_path = ROOT_DIR / meta.audio_rel_path
@@ -60,7 +67,7 @@ async def download_audio(intercept_id: str):
 
 
 def _load_intercept_detail(intercept_id: str) -> InterceptDetail:
-    meta = registry.get_meta(intercept_id)
+    meta = get_meta(intercept_id)
     if not meta:
         raise HTTPException(status_code=404, detail="Intercept not found")
 
@@ -119,19 +126,18 @@ async def get_intercept(intercept_id: str) -> InterceptDetail:
     return _load_intercept_detail(intercept_id)
 
 
-async def _process_upload(intercept_id: str, file_path: Path) -> None:
-    """Trigger the pipeline and update registry once finished."""
+def _process_pipeline(intercept_id: str, audio_path: Path, *, force: bool = False) -> None:
+    """Run the pipeline and update registry once finished."""
     from src.pipeline import process_clip
 
     try:
-        result = process_clip(file_path, intercept_id)
-        # Extract first bullet from report for summary if available.
+        result = process_clip(audio_path, intercept_id, force=force)
         summary_line: Optional[str] = None
         for line in result.report_markdown.splitlines():
             if line.startswith("- "):
                 summary_line = line.removeprefix("- ").strip()
                 break
-        meta = registry.get_meta(intercept_id)
+        meta = get_meta(intercept_id)
         if meta:
             meta.status = "ready"
             meta.updated_at = _now()
@@ -144,13 +150,18 @@ async def _process_upload(intercept_id: str, file_path: Path) -> None:
                 meta.priority = None
             upsert_meta(meta)
     except Exception as exc:  # pylint: disable=broad-except
-        meta = registry.get_meta(intercept_id)
+        meta = get_meta(intercept_id)
         if meta:
             meta.status = "failed"
             meta.updated_at = _now()
             meta.executive_summary = f"Processing failed: {exc}"
             upsert_meta(meta)
         raise
+
+
+async def _process_upload(intercept_id: str, file_path: Path) -> None:
+    """Background task entrypoint for newly uploaded files."""
+    _process_pipeline(intercept_id, file_path, force=False)
 
 
 @app.post("/intercepts", response_model=InterceptSummary, status_code=201)
@@ -185,5 +196,54 @@ async def upload_intercept(
     upsert_meta(meta)
 
     background_tasks.add_task(_process_upload, intercept_id, dest_path)
+
+    return meta.to_summary(base_url=get_base_audio_url())
+
+
+def _cleanup_intercept_files(intercept_id: str, meta: InterceptMeta) -> None:
+    targets = [
+        PROCESSED_DIR / "asr" / intercept_id,
+        PROCESSED_DIR / "bg" / intercept_id,
+        PROCESSED_DIR / "reports" / f"{intercept_id}.md",
+    ]
+    for target in targets:
+        if target.exists():
+            if target.is_dir():
+                shutil.rmtree(target, ignore_errors=True)
+            else:
+                target.unlink(missing_ok=True)
+
+    if meta.audio_rel_path:
+        audio_path = ROOT_DIR / meta.audio_rel_path
+        if audio_path.exists():
+            audio_path.unlink(missing_ok=True)
+
+
+@app.delete("/intercepts/{intercept_id}", status_code=204)
+async def delete_intercept(intercept_id: str) -> None:
+    meta = delete_meta(intercept_id)
+    if not meta:
+        raise HTTPException(status_code=404, detail="Intercept not found")
+    _cleanup_intercept_files(intercept_id, meta)
+
+
+@app.post("/intercepts/{intercept_id}/rerun", response_model=InterceptSummary)
+async def rerun_intercept(background_tasks: BackgroundTasks, intercept_id: str) -> InterceptSummary:
+    meta = get_meta(intercept_id)
+    if not meta:
+        raise HTTPException(status_code=404, detail="Intercept not found")
+    if not meta.audio_rel_path:
+        raise HTTPException(status_code=400, detail="Audio path not recorded for intercept")
+
+    audio_path = ROOT_DIR / meta.audio_rel_path
+    if not audio_path.exists():
+        raise HTTPException(status_code=404, detail="Source audio not found")
+
+    meta.status = "processing"
+    meta.updated_at = _now()
+    meta.executive_summary = "Re-processing pipeline..."
+    upsert_meta(meta)
+
+    background_tasks.add_task(_process_pipeline, intercept_id, audio_path, force=True)
 
     return meta.to_summary(base_url=get_base_audio_url())

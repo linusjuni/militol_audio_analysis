@@ -47,46 +47,52 @@ export function InterceptLogPanel({
         </div>
       </div>
 
-      <div className="log-panel__list">
-        {items.map((item) => (
-          <article
-            key={item.intercept_id}
-            onClick={() => onSelect(item.intercept_id)}
-            role="button"
-            tabIndex={0}
-            onKeyDown={(event) => {
-              if (event.key === "Enter" || event.key === " ") {
-                event.preventDefault();
-                onSelect(item.intercept_id);
-              }
-            }}
-            className={`log-card ${selectedId === item.intercept_id ? "log-card--selected" : ""}`}
-          >
-            <header className="log-card__header">
-              <div>
-                <span className="log-card__title">{item.title}</span>
-                <span className={`log-card__status log-card__status--${item.status}`}>
-                  {item.status.toUpperCase()}
-                </span>
-              </div>
-              <time dateTime={item.created_at}>
-                {new Date(item.created_at).toLocaleString()}
-              </time>
-            </header>
-            {item.executive_summary && (
-              <p className="log-card__summary">{item.executive_summary}</p>
-            )}
-            {item.tags.length > 0 && (
-              <div className="log-card__tags">
-                {item.tags.map((tag) => (
-                  <span key={tag} className="log-card__tag">
-                    {tag}
+      <div className="log-panel__scroller">
+        <div className="log-panel__list">
+          {items.map((item) => (
+            <article
+              key={item.intercept_id}
+              onClick={() => onSelect(item.intercept_id)}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(event) => {
+                if (event.key === "Enter" || event.key === " ") {
+                  event.preventDefault();
+                  onSelect(item.intercept_id);
+                }
+              }}
+              className={`log-card ${
+                selectedId === item.intercept_id ? "log-card--selected" : ""
+              }`}
+            >
+              <header className="log-card__header">
+                <div>
+                  <span className="log-card__title">{item.title}</span>
+                  <span className={`log-card__status log-card__status--${item.status}`}>
+                    {item.status.toUpperCase()}
                   </span>
-                ))}
-              </div>
-            )}
-          </article>
-        ))}
+                </div>
+                <time dateTime={item.created_at}>
+                  {new Date(item.created_at).toLocaleString()}
+                </time>
+              </header>
+              {item.executive_summary && (
+                <p className="log-card__summary">{item.executive_summary}</p>
+              )}
+              {item.tags.length > 0 && (
+                <div className="log-card__tags">
+                  {item.tags.map((tag) => (
+                    <span key={tag} className="log-card__tag">
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+              )}
+            </article>
+          ))}
+        </div>
+        <div className="log-panel__fade log-panel__fade--top" />
+        <div className="log-panel__fade log-panel__fade--bottom" />
       </div>
     </div>
   );
