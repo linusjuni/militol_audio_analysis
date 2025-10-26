@@ -3,6 +3,7 @@ import ReactMarkdown from "react-markdown";
 import type { InterceptDetail } from "../api/types";
 import { MissionTimeline } from "./MissionTimeline";
 import "./InterceptDetailPanel.css";
+import { stripFileExtension } from "../utils/text";
 
 interface DetailPanelProps {
   detail: InterceptDetail | null;
@@ -53,6 +54,7 @@ export function InterceptOverviewPanel({
   }
 
   const { meta } = detail;
+  const displayTitle = stripFileExtension(meta.title) || meta.title;
   const startedAt = new Date(meta.created_at).toLocaleString();
   const audioHref = computeAudioUrl(detail, interceptId);
   const tags = meta.tags ?? [];
@@ -69,7 +71,7 @@ export function InterceptOverviewPanel({
       <header className="detail-overview__header">
         <div>
           <span className="detail-overview__eyebrow">STATUS · {meta.status.toUpperCase()}</span>
-          <h2>{meta.title}</h2>
+          <h2>{displayTitle}</h2>
           <div className="detail-overview__meta">
             <span>Captured · {startedAt}</span>
             {meta.duration_s ? (
@@ -207,7 +209,7 @@ export function InterceptDeepDivePanel({
     try {
       if ("share" in navigator && typeof navigator.share === "function") {
         await navigator.share({
-          title: detail?.meta.title ?? "Intercept Intelligence Report",
+          title: stripFileExtension(detail?.meta.title ?? "") || "Intercept Intelligence Report",
           text: augmentedReport,
         });
         setShareStatus("shared");

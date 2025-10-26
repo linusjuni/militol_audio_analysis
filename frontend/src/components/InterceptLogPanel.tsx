@@ -1,4 +1,5 @@
 import type { InterceptSummary } from "../api/types";
+import { stripFileExtension } from "../utils/text";
 import "./InterceptLogPanel.css";
 
 interface InterceptLogPanelProps {
@@ -67,7 +68,9 @@ export function InterceptLogPanel({
             >
               <header className="log-card__header">
                 <div>
-                  <span className="log-card__title">{item.title}</span>
+                  <span className="log-card__title">
+                    {stripFileExtension(item.title) || item.title}
+                  </span>
                   <span className={`log-card__status log-card__status--${item.status}`}>
                     {item.status.toUpperCase()}
                   </span>

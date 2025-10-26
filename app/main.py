@@ -1,7 +1,8 @@
 from __future__ import annotations
 
-from datetime import datetime, timezone
 import shutil
+import subprocess
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional
 
@@ -172,20 +173,61 @@ async def upload_intercept(
     if not file.filename:
         raise HTTPException(status_code=400, detail="Uploaded file requires a filename")
 
-    if not file.filename.lower().endswith(".wav"):
-        raise HTTPException(status_code=400, detail="Only .wav files are supported at this time")
+    original_name = file.filename
 
-    slug = Path(file.filename).stem.lower().replace(" ", "_")
+    suffix = Path(original_name).suffix.lower()
+    if suffix not in {".wav", ".m4a"}:
+        raise HTTPException(
+            status_code=400, detail="Only .wav or .m4a files are supported at this time"
+        )
+
+    slug = Path(original_name).stem.lower().replace(" ", "_")
     intercept_id = f"{slug}-{int(_now().timestamp())}"
     RAW_DIR.mkdir(parents=True, exist_ok=True)
     dest_path = RAW_DIR / f"{intercept_id}.wav"
 
     contents = await file.read()
-    dest_path.write_bytes(contents)
+    if suffix == ".wav":
+        dest_path.write_bytes(contents)
+    else:
+        temp_input = RAW_DIR / f"{intercept_id}_upload{suffix}"
+        temp_input.write_bytes(contents)
+
+        ffmpeg_path = shutil.which("ffmpeg")
+        if not ffmpeg_path:
+            temp_input.unlink(missing_ok=True)
+            raise HTTPException(
+                status_code=500,
+                detail="Audio conversion unavailable: ffmpeg not installed on the server.",
+            )
+        try:
+            subprocess.run(
+                [
+                    ffmpeg_path,
+                    "-y",
+                    "-i",
+                    str(temp_input),
+                    str(dest_path),
+                ],
+                check=True,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.PIPE,
+            )
+        except subprocess.CalledProcessError as exc:
+            temp_input.unlink(missing_ok=True)
+            dest_path.unlink(missing_ok=True)
+            raise HTTPException(
+                status_code=500, detail="Failed to convert uploaded audio to WAV."
+            ) from exc
+        finally:
+            temp_input.unlink(missing_ok=True)
+    await file.close()
+
+    display_title = Path(original_name).stem.strip() or intercept_id
 
     meta = InterceptMeta(
         intercept_id=intercept_id,
-        title=file.filename,
+        title=display_title,
         status="processing",
         created_at=_now(),
         updated_at=_now(),
