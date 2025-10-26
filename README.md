@@ -4,6 +4,32 @@ Multi-modal deep learning pipeline for automated intelligence extraction from in
 
 Developed for European Defense Tech Hackathon - extracting comprehensive insights from audio beyond just words.
 
+## Ops Console Interface
+
+The repository now ships with a FastAPI-powered service and a React operations console that present intercepts in a military-grade UI. The API exposes endpoints for listing intercepts, fetching full analysis packages, downloading audio, and queuing new files for processing. The frontend visualizes the intercept log, synchronized transcript/background-event timelines, and the LLM-generated report.
+
+### Running the Stack Locally
+
+1. **Backend**
+   ```bash
+   uv sync
+   uv run uvicorn app.main:app --reload --port 8000
+   ```
+   Ensure the AST checkpoint exists at `runs/ast_mad/best.pt` (or update the path in `src/pipeline.py`). The service stores intercept metadata under `data/processed/intercepts/index.json` and will auto-bootstrap from existing processed clips.
+
+2. **Frontend**
+   ```bash
+   cd frontend
+   npm install
+   npm run dev
+   ```
+   The Vite dev server proxies `/api/*` requests to the backend at `http://localhost:8000`.
+
+3. **Usage**
+   - Use the left-rail action **Queue New Intercept** to upload a `.wav`. The API writes to `data/raw/` and kicks off the full pipeline (Whisper ASR + AST background events + LLM report).
+   - The intercept log polls every 10 seconds; once processing finishes the detail view refreshes automatically with the new report and synchronized timeline.
+
+
 ## Transformer Sound Event Detection MVP
 
 The repository now includes a minimal sound-event detector (`sed/`) that
